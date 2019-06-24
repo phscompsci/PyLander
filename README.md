@@ -1,1 +1,1 @@
-# PyLander
+# PyLander is a rocket landing simulator taking inspiration from SpaceX style landings. The goal of this project is to improve our programming skills and create something that is somewhat entertaining. 

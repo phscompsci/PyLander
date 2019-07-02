@@ -10,8 +10,7 @@ import sys
 import os
 
 import math
-import arcade
-import pyglet
+
 # TODO: implement try and except
 
 # TODO: rename space, see if error goes away

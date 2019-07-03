@@ -162,7 +162,6 @@ class Game:
         self.space = pymunk.Space()
         self.space.gravity = (0.0, GRAVITY)
         self.dt = 1 / FRAMERATE
-        self.options = pymunk.pygame_util.DrawOptions(self.screen)
 
         # Initialize unchangeable variables/pygame
         self.game_exit = False
@@ -233,8 +232,6 @@ class Game:
 
             sprite_group.update()
             sprite_group.draw(self.screen)
-
-            self.space.debug_draw(self.options)
 
             pygame.display.update()
 

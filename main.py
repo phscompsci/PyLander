@@ -136,7 +136,8 @@ class Explosion(pygame.sprite.Sprite):
         super().__init__()
         game = Game()
         rocket = Rocket(game.space, "spacey", 300, 600)
-        self.image = pygame.transform.scale(pygame.image.load(os.getcwd() + "/images/explosion/explosion01.jpg"), (800, 800))
+        self.image = pygame.transform.scale(pygame.image.load(os.getcwd() + "/assets/props/explosion01.jpg"),
+                                                             (800, 800))
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH / 2, HEIGHT / 2)
         self.explosion_body = pymunk.Body(body_type = pymunk.Body.STATIC)
@@ -151,7 +152,8 @@ class Game:
         pygame.font.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
-        self.surface = pygame.transform.scale(pygame.image.load(os.getcwd() + "/skyLevel.jpg").convert(), (600, 800))  # Surface variable
+        self.surface = pygame.transform.scale(pygame.image.load(os.getcwd() + "/assets/props/skyLevel.jpg").convert(),
+                                                               (600, 800))
         self.intro = True
         self.font = pygame.font.SysFont(None, 25)
         self.sprite_group = pygame.sprite.Group()

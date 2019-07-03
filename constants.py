@@ -1,0 +1,19 @@
+# Colors
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+
+# Pymunk
+GRAVITY = -1000
+EXPLOSION_TEXTURE_COUNT = 60
+# Window
+WIDTH = 600
+HEIGHT = 800
+
+# Pygame
+FRAMERATE = 30
+STEP_SIZE = 0.02
+# Dimensions
+#SPACEY_DIMENSIONS

@@ -11,9 +11,7 @@ import os
 
 import math
 
-# TODO: implement try and except
-
-# TODO: rename space, see if error goes away
+# TODO: Resize assets, add levels, use constants instead of arbitrary numbers
 
 # A rocket landing simulator game that has multiple levels/rockets
 
@@ -55,7 +53,6 @@ class Rocket(pygame.sprite.Sprite):  # Calculate its own positions and display
         self.rect.center = (x, y)
 
         # Pymunk
-        # Rocket Constants
 
         self.rocket_mass = 100  # pseudo mass guess and check
         self.rocket_size = (self.rect.width, self.rect.height)
@@ -72,7 +69,10 @@ class Rocket(pygame.sprite.Sprite):  # Calculate its own positions and display
         self.space = space
         self.space.add(self.rocket_body, self.rocket_shape)
 
-        self.rocket_body.angular_velocity = 0
+        self.rocket_shape.elasticity = 5
+
+        self.previous_velocity = [0, 0]  # x, y
+        self.acceleration = [0, 0]  # x, y
 
     def load_images(self):
         # TODO: put all image variables into dictionary or else:
@@ -96,6 +96,13 @@ class Rocket(pygame.sprite.Sprite):  # Calculate its own positions and display
         self.rect = self.image.get_rect(center=self.rect.center)
         self.rect.center = (self.rocket_body.position[0], pm_to_pg_y(self.rocket_body.position[1]))
 
+        self.acceleration = [self.previous_velocity[0] - self.rocket_body.velocity[0],
+                             self.previous_velocity[1] - self.rocket_body.velocity[1]]
+
+    def store_velocity(self):
+        self.previous_velocity[0] = self.rocket_body.velocity[0]
+        self.previous_velocity[1] = self.rocket_body.velocity[1]
+
     def thrust_up(self):
         self.rocket_body.apply_force_at_local_point((0, 200000), (0, 0))
 
@@ -104,10 +111,6 @@ class Rocket(pygame.sprite.Sprite):  # Calculate its own positions and display
 
     def left_rcs(self):
         self.rocket_body.apply_force_at_local_point((50000, 0), (0, 25))
-
-
-
-
 
 
 class Platform(pygame.sprite.Sprite):
@@ -133,11 +136,12 @@ class Explosion(pygame.sprite.Sprite):
         super().__init__()
         game = Game()
         rocket = Rocket(game.space, "spacey", 300, 600)
-        self.image = pygame.transform.scale(pygame.image.load(os.getcwd() + "/images/explosion/explosion01.jpg"), (800, 800))
+        self.image = pygame.transform.scale(pygame.image.load(os.getcwd() + "/assets/props/explosion01.jpg"),
+                                                             (800, 800))
         self.rect = self.image.get_rect()
         self.rect.center = (WIDTH / 2, HEIGHT / 2)
         self.explosion_body = pymunk.Body(body_type = pymunk.Body.STATIC)
-        self.explosion_shape = pymunk.Poly.create_box(self.explosion_body, (self.rect))
+        self.explosion_shape = pymunk.Poly.create_box(self.explosion_body, self.rect)
         space.add(self.explosion_body, self.explosion_shape)
 
 
@@ -148,25 +152,27 @@ class Game:
         pygame.font.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
-        self.surface = pygame.transform.scale(pygame.image.load(os.getcwd() + "/skyLevel.jpg").convert(), (600, 800))  # Surface variable
+        self.surface = pygame.transform.scale(pygame.image.load(os.getcwd() + "/assets/props/skyLevel.jpg").convert(),
+                                                               (600, 800))
         self.intro = True
         self.font = pygame.font.SysFont(None, 25)
         self.sprite_group = pygame.sprite.Group()
+
         # Pymunk initialization
         self.space = pymunk.Space()
         self.space.gravity = (0.0, GRAVITY)
         self.dt = 1 / FRAMERATE
+        self.options = pymunk.pygame_util.DrawOptions(self.screen)
+
         # Initialize unchangeable variables/pygame
         self.game_exit = False
         self.objects = []
-
-
 
     def message_to_screen(self, msg, color):
         screen_text = self.font.render(msg, True, color)
         self.screen.blit(screen_text, [50, 50])
 
-    def intro_loop(self):
+    def start(self):
         while self.intro is True:
             self.screen.fill(WHITE)
             self.message_to_screen("Welcome to PyLander! press S to start Q to quit", BLUE)
@@ -180,10 +186,6 @@ class Game:
                         self.game_exit = True
             pygame.display.update()
 
-
-
-
-
     def game_over_screen(self):
         while True:
             self.message_to_screen("Game over! Thanks for playing. Press S to start or Q to quit", RED)
@@ -193,11 +195,9 @@ class Game:
                         self.game_loop()
                     if event.key == pygame.K_q:
                         sys.exit()
+                if event.type == pygame.QUIT:
+                    sys.exit()
             pygame.display.update()
-
-
-
-
 
     def game_loop(self):
         rocket = Rocket(self.space, "spacey", 300, 600)
@@ -207,8 +207,10 @@ class Game:
 
         sprite_group.add(rocket)
         sprite_group.add(platform)
+
         explosion_group = pygame.sprite.Group()
         explosion_group.add(explosion)
+
         while not self.game_exit:
             # Exit controls
             for event in pygame.event.get():
@@ -222,6 +224,8 @@ class Game:
             if keys[pygame.K_a]:
                 rocket.left_rcs()
 
+            rocket.store_velocity()
+
             self.space.step(STEP_SIZE)
 
             self.screen.fill((WHITE))
@@ -229,16 +233,22 @@ class Game:
 
             sprite_group.update()
             sprite_group.draw(self.screen)
+
+            self.space.debug_draw(self.options)
+
             pygame.display.update()
+
             self.clock.tick(FRAMERATE)
 
-            if rocket.rocket_body.position.int_tuple[1] < 0 or rocket.rocket_body.position.int_tuple[0] < 0 or rocket.rocket_body.position.int_tuple[0] > 600:
+            if rocket.rocket_body.position.int_tuple[1] < 0 or rocket.rocket_body.position.int_tuple[0] < 0 \
+               or rocket.rocket_body.position.int_tuple[0] > 600 or abs(rocket.acceleration[0]) > 250\
+               or abs(rocket.acceleration[1]) > 250:
+                self.space.remove(rocket.rocket_body, rocket.rocket_shape)
                 explosion_group.update()
                 explosion_group.draw(self.screen)
                 self.game_over_screen()
 
 
-
 if __name__ == "__main__":
     game = Game()
-    game.intro_loop()
+    game.start()
